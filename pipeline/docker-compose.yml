@@ -1,0 +1,51 @@
+# Local development stack for the pipeline. NOT for production.
+# Spins up: Postgres, MongoDB, Airflow (standalone), and the FastAPI backend.
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: stocks
+      POSTGRES_USER: stocks
+      POSTGRES_PASSWORD: stocks
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports: ["5432:5432"]
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongodata:/data/db
+      - ./db/mongo_collections.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports: ["27017:27017"]
+
+  api:
+    build:
+      context: ../backend
+    environment:
+      MODEL_ROOT: /models
+      CORS_ALLOW_ORIGINS: "*"
+    volumes:
+      - ../models:/models:ro
+    ports: ["8000:8000"]
+
+  airflow:
+    image: apache/airflow:2.10.3-python3.11
+    depends_on: [postgres]
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://stocks:stocks@postgres/stocks
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      _PIP_ADDITIONAL_REQUIREMENTS: "apache-airflow-providers-airbyte apache-airflow-providers-postgres apache-airflow-providers-slack requests"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./dbt:/opt/dbt
+    command: standalone
+    ports: ["8080:8080"]
+
+volumes:
+  pgdata:
+  mongodata:

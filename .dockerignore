@@ -1,0 +1,16 @@
+.git
+.gitignore
+.DS_Store
+**/__pycache__
+**/*.pyc
+**/.ipynb_checkpoints
+*.ipynb
+*.pdf
+data/
+pipeline/
+frontend/
+.claude/
+backend/Dockerfile
+backend/run.sh
+backend/frontend-client/
+README.md

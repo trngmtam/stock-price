@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: ohlcv_landing
+        description: "Raw OHLCV rows landed by Airbyte from upstream sources."
+        loaded_at_field: ingested_at
+        freshness:
+          warn_after:  { count: 26, period: hour }
+          error_after: { count: 48, period: hour }
+        columns:
+          - name: ticker
+            tests: [not_null]
+          - name: trade_date
+            tests: [not_null]
+
+      - name: ticker_overview

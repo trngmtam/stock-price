@@ -1,0 +1,53 @@
+# Airbyte source config (Custom Python connector spec) for ingesting Vietnamese
+# stock OHLCV + ticker overview into Postgres `raw` schema.
+#
+# Apply via the Airbyte UI (Settings → Sources → New Source → Custom),
+# or via the Airbyte API / Octavia CLI.
+#
+# This is a thin wrapper around the public `vnstock` Python library.
+
+source:
+  name: vnstock-vnindex
+  type: custom
+  docker_image: stockprice/airbyte-source-vnstock:0.1.0  # built locally
+  spec:
+    tickers:
+      - VNM
+      - VIC
+      - VHM
+      - FPT
+      - HPG
+      - MSN
+      - VCB
+      - TCB
+      - BID
+      - MWG
+      # ... full VN-Index universe loaded from companies.csv
+    start_date: "2010-01-01"
+    incremental: true
+    cursor_field: trade_date
+
+streams:
+  - name: ohlcv
+    sync_mode: incremental_append_dedup
+    primary_key: [ticker, trade_date]
+    destination_table: raw.ohlcv_landing
+
+  - name: ticker_overview
+    sync_mode: full_refresh_overwrite
+    destination_table: raw.ticker_overview
+
+destination:
+  name: postgres-warehouse
+  type: postgres
+  host: ${POSTGRES_HOST}
+  port: 5432
+  database: stocks
+  schema: raw
+  username: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+
+schedule:
+  # Airflow drives the cadence — Airbyte sync is triggered by an
+  # AirbyteTriggerSyncOperator from the DAG, not by Airbyte's own scheduler.
+  cron: null

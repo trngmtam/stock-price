@@ -32,6 +32,13 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+<!-- Backend URL — change before deploying. Empty string = use mock data. -->
+<script>
+  window.QUANTA_API_URL =
+    (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:8000'
+      : ''; // e.g. 'https://your-backend.up.railway.app'
+</script>
 <script src="js/mockdata.js"></script>
 <script src="js/api.js"></script>
 <script type="text/babel" src="js/components.jsx"></script>
