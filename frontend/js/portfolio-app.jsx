@@ -1,319 +1,289 @@
 /* global React, ReactDOM */
-// Page 3 — Portfolio (donut + risk gauge + recommended list)
+// Page 1 — Predict
+// Modes: next-day, kth-day, k-consecutive
+// Chart-led with slim left sidebar (ticker + horizon + model).
 
-const { useState: useStateF, useEffect: useEffectF, useMemo: useMemoF } = React;
+const { useState: useStateP, useEffect: useEffectP, useMemo: useMemoP } = React;
 
-const ALLOC_COLORS = ['#1F8A5B', '#2059D6', '#B47A0E', '#7A5AE0', '#0E5234', '#5C7CCB', '#CB7E2F', '#3DBA8C'];
+function PredictApp() {
+  const [ticker, setTicker] = useStateP('FPT');
+  const [mode, setMode]     = useStateP('next');     // 'next' | 'kth' | 'kdays'
+  const [k, setK]           = useStateP(7);
+  const [model, setModel]   = useStateP('LSTM');
+  const [range, setRange]   = useStateP('6M');
+  const [chartStyle, setChartStyle] = useStateP('candle');
 
-function PortfolioApp() {
-  const [profile, setProfile] = useStateF('balanced');
-  const [budget, setBudget] = useStateF(500); // million VND
-  const [horizon, setHorizon] = useStateF('1Y');
-  const [data, setData] = useStateF(null);
+  const [history, setHistory] = useStateP([]);
+  const [snapshot, setSnapshot] = useStateP(null);
+  const [forecast, setForecast] = useStateP(null);
+  const [loading, setLoading]   = useStateP(false);
 
-  useEffectF(() => {
+  const tickerObj = useMemoP(
+    () => window.QuantaData.TICKERS.find(t => t.sym === ticker) || window.QuantaData.TICKERS[0],
+    [ticker]
+  );
+
+  // Read tweaks (chart style override)
+  useEffectP(() => {
+    const sync = () => {
+      const cs = document.documentElement.getAttribute('data-chart');
+      if (cs) setChartStyle(cs);
+    };
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-chart'] });
+    return () => obs.disconnect();
+  }, []);
+
+  // Load history + snapshot when ticker changes
+  useEffectP(() => {
     let on = true;
-    window.QuantaAPI.getPortfolio(profile).then(d => on && setData(d));
+    window.QuantaAPI.getHistory(ticker, 250).then(h => on && setHistory(h));
+    window.QuantaAPI.getSnapshot(ticker).then(s => on && setSnapshot(s));
     return () => { on = false; };
-  }, [profile]);
+  }, [ticker]);
+
+  // Re-run forecast on inputs change
+  useEffectP(() => {
+    let on = true;
+    setLoading(true);
+    const horizon = mode === 'next' ? 1 : k;
+    window.QuantaAPI.predict({ sym: ticker, mode, k: horizon }).then(f => {
+      if (!on) return;
+      setForecast(f);
+      setLoading(false);
+    });
+    return () => { on = false; };
+  }, [ticker, mode, k]);
+
+  const last = history.length ? history[history.length - 1] : null;
+  const target = forecast?.points?.length ? forecast.points[forecast.points.length - 1] : null;
+
+  const metrics = [];
+  if (last) {
+    metrics.push({ label: 'LAST CLOSE',  value: fmtPx(last.close) });
+    metrics.push({ label: 'DAY VOLUME',  value: fmtVol(last.volume) });
+  }
+  if (target && last) {
+    const delta = ((target.price - last.close) / last.close) * 100;
+    metrics.push({ label: mode === 'next' ? 'NEXT DAY' : (mode === 'kth' ? `DAY +${k}` : `+${k}D TARGET`),
+                   value: fmtPx(target.price), dir: delta >= 0 ? 'up' : 'down' });
+    metrics.push({ label: 'EXPECTED Δ',  value: fmtPct(delta, 2), dir: delta >= 0 ? 'up' : 'down' });
+  }
 
   return (
     <div className="app">
-      <Topbar active="portfolio" />
+      <Topbar active="predict" />
       <div className="workspace">
+        {/* === Sidebar === */}
         <aside className="sidebar">
-          <div className="side-section">
-            <div className="side-label">Investor profile</div>
-            <div className="seg" style={{ '--cols': 1, gridTemplateColumns: '1fr' }}>
-              <ProfileBtn active={profile} value="prudent"   label="Prudent"     desc="Risk-averse · capital preservation" onClick={setProfile} />
-              <ProfileBtn active={profile} value="balanced"  label="Balanced"    desc="Risk-adjusted return"               onClick={setProfile} />
-              <ProfileBtn active={profile} value="aggressive"label="Aggressive"  desc="Risk-taking · growth"                onClick={setProfile} />
-            </div>
-          </div>
+          <TickerSelect value={ticker} onChange={setTicker} />
 
           <div className="divider" />
 
           <div className="side-section">
-            <div className="field">
-              <div className="field-label">
-                <span>Budget</span>
-                <span className="num">₫{budget}M</span>
+            <div className="side-label">Forecast Mode</div>
+            <div className="seg" style={{ '--cols': 3 }}>
+              <button className={mode === 'next'  ? 'on' : ''} onClick={() => setMode('next')}>Next-day</button>
+              <button className={mode === 'kth'   ? 'on' : ''} onClick={() => setMode('kth')}>k-th day</button>
+              <button className={mode === 'kdays' ? 'on' : ''} onClick={() => setMode('kdays')}>k-consec.</button>
+            </div>
+
+            {mode !== 'next' && (
+              <div className="field" style={{ marginTop: 6 }}>
+                <div className="field-label">
+                  <span>{mode === 'kth' ? 'Target day' : 'Horizon'} (k)</span>
+                  <span className="num">{k}</span>
+                </div>
+                <input className="range" type="range" min="2" max="14" value={k} onChange={e => setK(+e.target.value)} />
+                <div style={{ display:'flex', justifyContent:'space-between', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--ink-3)' }}>
+                  <span>2</span><span>14</span>
+                </div>
               </div>
-              <input className="range" type="range" min="50" max="5000" step="50" value={budget} onChange={e => setBudget(+e.target.value)} />
-              <div style={{ display:'flex', justifyContent:'space-between', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--ink-3)' }}>
-                <span>50M</span><span>5B</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="divider" />
-
-          <div className="side-section">
-            <div className="side-label">Horizon</div>
-            <div className="seg" style={{ '--cols': 4 }}>
-              {['3M','6M','1Y','3Y'].map(h => (
-                <button key={h} className={horizon===h?'on':''} onClick={()=>setHorizon(h)}>{h}</button>
-              ))}
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          <div className="side-section">
-            <div className="side-label">Constraints</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6, fontSize:13, color:'var(--ink-2)' }}>
-              <KVlite k="Max per name" v="25%" />
-              <KVlite k="Max sector" v="40%" />
-              <KVlite k="Min positions" v="6" />
-              <KVlite k="Universe" v="VN-Index" />
-            </div>
-          </div>
         </aside>
 
+        {/* === Main === */}
         <main className="main">
-          <div className="hero-row">
-            <div className="hero-left">
-              <span className="eyebrow"> Vietnam Stock Portfolio · Risk-managed</span>
-              <div className="hero-ticker"><span className="sym">Portfolio</span><span className="name">{labelFor(profile)} · {horizon}</span></div>
+          <Hero snapshot={snapshot} ticker={tickerObj} />
+
+          <MetricsRow items={metrics} />
+
+          {/* Chart panel */}
+          <div className="chart-wrap" style={{ marginBottom: 18 }}>
+            <div className="chart-tools">
+              <div className="chart-legend">
+                <span className="legend-item"><span className="legend-swatch up"></span>Up day</span>
+                <span className="legend-item"><span className="legend-swatch down"></span>Down day</span>
+                <span className="legend-item"><span className="legend-swatch dashed"></span>{model} forecast</span>
+              </div>
+              <div className="range-tabs">
+                {['1M','3M','6M','1Y','ALL'].map(r => (
+                  <button key={r} className={range===r?'on':''} onClick={() => setRange(r)}>{r}</button>
+                ))}
+              </div>
             </div>
+            <CandleChart history={history} forecast={forecast} style={chartStyle} range={range} height={380} />
           </div>
 
-          {data && (
-            <>
-              <MetricsRow items={[
-                { label:'EXPECTED RETURN', value: fmtPct(data.expReturn*100, 2), dir:'up' },
-                { label:'RISK SCORE', value: `${data.risk}/100` },
-                { label:'POSITIONS', value: data.holdings.length },
-                { label:'BUDGET', value: `₫${budget}M` },
-              ]} />
-
-              <div className="grid-3" style={{ marginBottom:18 }}>
-                {/* Allocation card */}
-                <div className="card" style={{gridColumn:'span 2', display:'grid', gridTemplateColumns:'260px 1fr', gap:24, alignItems:'center'}}>
-                  <div>
-                    <div className="eyebrow">Composition</div>
-                    <div className="card-title" style={{marginTop:4, marginBottom:8}}>Allocation</div>
-                    <Donut holdings={data.holdings} />
-                  </div>
-                  <div className="alloc-list">
-                    {data.holdings.map((h, i) => (
-                      <div className="alloc-row" key={h.sym}>
-                        <span className="swatch" style={{background: ALLOC_COLORS[i % ALLOC_COLORS.length]}}></span>
-                        <span className="sym">{h.sym}</span>
-                        <span className="name">{h.name} · {h.sector}</span>
-                        <span className="pct">{(h.weight * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Risk gauge */}
-                <div className="card">
-                  <div className="card-head">
-                    <div>
-                      <div className="eyebrow">Risk</div>
-                      <div className="card-title" style={{marginTop:4}}>Portfolio risk</div>
-                    </div>
-                  </div>
-                  <RiskGauge score={data.risk} />
-                  <div style={{ marginTop:14, fontSize:12, color:'var(--ink-2)', lineHeight:1.55 }}>
-                    Composite of <b style={{color:'var(--ink)'}}>volatility</b>,{' '}
-                    <b style={{color:'var(--ink)'}}>beta</b>,{' '}
-                    <b style={{color:'var(--ink)'}}>drawdown</b>, and{' '}
-                    <b style={{color:'var(--ink)'}}>fundamental health</b>.
-                  </div>
-                </div>
-              </div>
-
-              {/* Recommended table */}
-              <div className="card flush">
-                <div style={{padding:'18px 20px 8px', display:'flex', justifyContent:'space-between', alignItems:'flex-end'}}>
-                  <div>
-                    <div className="eyebrow">Profitable selection</div>
-                    <div className="card-title" style={{marginTop:4}}>Recommended holdings</div>
-                    <div className="card-sub">Sorted by allocation weight · risk-adjusted profit potential</div>
-                  </div>
-                </div>
-                <table className="rec-table">
-                  <thead>
-                    <tr>
-                      <th>Ticker</th>
-                      <th>Sector</th>
-                      <th className="right">Weight</th>
-                      <th className="right">Allocation</th>
-                      <th className="right">Exp. return</th>
-                      <th className="right">Risk</th>
-                      <th>Tag</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.holdings.map((h, i) => {
-                      const allocVnd = budget * h.weight;
-                      const tag = h.risk < 35 ? { cls:'green',  label:'SAFE' } :
-                                  h.risk < 65 ? { cls:'amber',  label:'MEDIUM' } :
-                                                { cls:'red',    label:'RISKY' };
-                      return (
-                        <tr key={h.sym}>
-                          <td>
-                            <div className="ticker-cell">
-                              <span className="swatch" style={{display:'inline-block', width:10, height:10, borderRadius:3, background:ALLOC_COLORS[i % ALLOC_COLORS.length]}}></span>
-                              <span className="mono">{h.sym}</span>
-                              <span style={{color:'var(--ink-3)'}}>{h.name}</span>
-                            </div>
-                          </td>
-                          <td style={{color:'var(--ink-2)'}}>{h.sector}</td>
-                          <td className="num">{(h.weight*100).toFixed(1)}%</td>
-                          <td className="num">₫{(allocVnd).toFixed(1)}M</td>
-                          <td className="num up">{fmtPct(h.profit*100, 1)}</td>
-                          <td className="num">{h.risk}</td>
-                          <td><span className={'tag ' + tag.cls}>{tag.label}</span></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Excluded list */}
-              <div className="card" style={{marginTop:18}}>
-                <div className="card-head">s
-                  <div>
-                    <div className="eyebrow">risk management</div>
-                    <div className="card-title" style={{marginTop:4}}>Excluded from portfolio</div>
-                    <div className="card-sub">Risk score above {profile === 'aggressive' ? 90 : profile === 'balanced' ? 75 : 60} or insufficient liquidity / data history.</div>
-                  </div>
-                </div>
-                <ExcludedList holdings={data.holdings} />
-              </div>
-            </>
-          )}
+          {/* Mode-specific panel below chart */}
+          {mode === 'next' && <NextDayPanel forecast={forecast} last={last} model={model} loading={loading} />}
+          {mode === 'kth'  && <KthDayPanel forecast={forecast} last={last} k={k} model={model} loading={loading} />}
+          {mode === 'kdays'&& <KDaysPanel forecast={forecast} last={last} k={k} model={model} loading={loading} />}
         </main>
       </div>
     </div>
   );
 }
 
-function labelFor(p) {
-  return p === 'prudent' ? 'Prudent · risk-averse' : p === 'aggressive' ? 'Aggressive · growth' : 'Balanced · risk-adjusted';
-}
-
-function ProfileBtn({ active, value, label, desc, onClick }) {
-  const on = active === value;
+function Toggle({ label, defaultOn }) {
+  const [on, setOn] = useStateP(!!defaultOn);
   return (
-    <div onClick={() => onClick(value)} style={{
-      cursor:'pointer',
-      padding:'10px 12px',
-      borderRadius:'var(--r-md)',
-      background: on ? 'var(--ink)' : 'transparent',
-      color: on ? '#fff' : 'var(--ink)',
-      transition: 'background 120ms',
-      marginBottom: 4,
+    <div onClick={() => setOn(o => !o)} style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'6px 0', cursor:'pointer', fontSize:13, color:'var(--ink-2)'
     }}>
-      <div style={{ fontWeight:500, fontSize:13 }}>{label}</div>
-      <div style={{ fontSize:11.5, color: on ? 'rgba(255,255,255,0.65)' : 'var(--ink-3)', marginTop:2 }}>{desc}</div>
+      <span>{label}</span>
+      <span style={{
+        width: 30, height: 16, borderRadius: 999,
+        background: on ? 'var(--ink)' : 'var(--line-2)',
+        position: 'relative', transition: 'background 120ms',
+      }}>
+        <span style={{
+          position:'absolute', top:2, left: on ? 16 : 2,
+          width: 12, height: 12, borderRadius: '50%', background: '#fff',
+          transition: 'left 120ms',
+        }} />
+      </span>
     </div>
   );
 }
 
-function KVlite({ k, v }) {
-  return (
-    <div style={{ display:'flex', justifyContent:'space-between', fontSize:12.5 }}>
-      <span style={{ color:'var(--ink-3)' }}>{k}</span>
-      <span style={{ fontFamily:'var(--font-mono)', fontVariantNumeric:'tabular-nums' }}>{v}</span>
-    </div>
-  );
-}
+// --- Mode panels ---
 
-function Donut({ holdings }) {
-  const size = 220;
-  const r = 88;
-  const cx = size/2, cy = size/2;
-  const total = holdings.reduce((a,h) => a + h.weight, 0) || 1;
-  let acc = 0;
+function NextDayPanel({ forecast, last, model, loading }) {
+  if (!forecast || !last) return null;
+  const p = forecast.points[0];
+  const delta = ((p.price - last.close) / last.close) * 100;
+  const dir = delta >= 0 ? 'up' : 'down';
   return (
-    <div className="donut-wrap" style={{ width:size, height:size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--line)" strokeWidth="22" />
-        {holdings.map((h, i) => {
-          const startA = (acc / total) * Math.PI * 2 - Math.PI/2;
-          acc += h.weight;
-          const endA   = (acc / total) * Math.PI * 2 - Math.PI/2;
-          const x1 = cx + r * Math.cos(startA), y1 = cy + r * Math.sin(startA);
-          const x2 = cx + r * Math.cos(endA),   y2 = cy + r * Math.sin(endA);
-          const large = (endA - startA) > Math.PI ? 1 : 0;
-          const path = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
-          return <path key={i} d={path} fill="none" stroke={ALLOC_COLORS[i % ALLOC_COLORS.length]} strokeWidth="22" strokeLinecap="butt" />;
-        })}
-      </svg>
-      <div className="donut-center">
-        <div>
-          <div className="lbl">Holdings</div>
-          <div className="val">{holdings.length}</div>
+    <div className="grid-3">
+      <div className="card" style={{gridColumn:'span 2'}}>
+        <div className="card-head">
+          <div>
+            <div className="eyebrow">Next-day forecast</div>
+            <div className="card-title" style={{marginTop:4}}>Tomorrow's projected close</div>
+            <div className="card-sub">Single-step prediction · {model} · trained on multi-feature OHLCV window of 60 days</div>
+          </div>
+          {loading && <span className="tag">PREDICTING…</span>}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:0, borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)' }}>
+          <Stat label="Predicted close" value={fmtPx(p.price)} accent="ink" />
+          <Stat label="Δ from today" value={fmtPct(delta, 2)} accent={dir} />
+          <Stat label="Confidence band" value={`${fmtPx(p.lower)} — ${fmtPx(p.upper)}`} />
         </div>
       </div>
+      <ModelInfoCard model={model} mae={1.42} rmse={2.31} mape={1.18} horizon={1} />
     </div>
   );
 }
 
-function RiskGauge({ score }) {
-  // Half-circle gauge
-  const w = 240, h = 140;
-  const cx = w/2, cy = 120, r = 88;
-  const startA = Math.PI;
-  const endA = 0;
-  const angle = startA - (score / 100) * (startA - endA);
-  // Generate arc segments by color zones
-  const seg = (a0, a1, color) => {
-    const x1 = cx + r * Math.cos(a0), y1 = cy + r * Math.sin(a0);
-    const x2 = cx + r * Math.cos(a1), y2 = cy + r * Math.sin(a1);
-    const large = (a0 - a1) > Math.PI ? 1 : 0;
-    return <path d={`M ${x1} ${y1} A ${r} ${r} 0 ${large} 0 ${x2} ${y2}`} fill="none" stroke={color} strokeWidth="14" strokeLinecap="butt" />;
-  };
-  const a0 = Math.PI;
-  const a30 = Math.PI - 0.3 * Math.PI;
-  const a70 = Math.PI - 0.7 * Math.PI;
-  const a100 = 0;
-  const needleX = cx + (r-2) * Math.cos(angle);
-  const needleY = cy + (r-2) * Math.sin(angle);
-  const label = score < 35 ? 'LOW' : score < 65 ? 'MEDIUM' : 'HIGH';
+function KthDayPanel({ forecast, last, k, model, loading }) {
+  if (!forecast || !last) return null;
+  const p = forecast.points[forecast.points.length - 1];
+  const delta = ((p.price - last.close) / last.close) * 100;
+  const dir = delta >= 0 ? 'up' : 'down';
   return (
-    <div className="gauge-wrap">
-      <svg className="gauge-svg" viewBox={`0 0 ${w} ${h}`}>
-        {seg(a0, a30, 'var(--up)')}
-        {seg(a30, a70, '#E1B567')}
-        {seg(a70, a100, 'var(--down)')}
-        {/* needle */}
-        <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx={cx} cy={cy} r="5" fill="var(--ink)" />
-        <text className="gauge-num" x={cx} y={cy - 16}>{score}</text>
-        <text className="gauge-lbl" x={cx} y={cy + 14}>{label}</text>
-      </svg>
-    </div>
-  );
-}
-
-function ExcludedList({ holdings }) {
-  // Pick a few "risky" tickers from the universe NOT in holdings
-  const heldSet = new Set(holdings.map(h => h.sym));
-  const universe = window.QuantaData.TICKERS.filter(t => !heldSet.has(t.sym));
-  const excluded = universe
-    .map(t => ({ ...t, risk: window.QuantaData.riskScore(t.sym), profit: window.QuantaData.profitPotential(t.sym) }))
-    .sort((a,b) => b.risk - a.risk)
-    .slice(0, 4);
-
-  return (
-    <div className="alloc-list">
-      {excluded.map(e => (
-        <div key={e.sym} className="alloc-row" style={{ gridTemplateColumns:'14px 60px 1fr 80px 60px' }}>
-          <span className="swatch" style={{ background:'var(--down-soft)' }}></span>
-          <span className="sym">{e.sym}</span>
-          <span className="name">{e.name} · {e.sector}</span>
-          <span style={{ fontFamily:'var(--font-mono)', fontSize:11.5, color:'var(--down)' }}>risk {e.risk}</span>
-          <span className="tag red">EXCLUDED</span>
+    <div className="grid-3">
+      <div className="card" style={{gridColumn:'span 2'}}>
+        <div className="card-head">
+          <div>
+            <div className="eyebrow">k-th day forecast</div>
+            <div className="card-title" style={{marginTop:4}}>Projected close on day +{k}</div>
+            <div className="card-sub">Single-target prediction · model directly outputs day +{k} (not iterated)</div>
+          </div>
+          {loading && <span className="tag">PREDICTING…</span>}
         </div>
-      ))}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:0, borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)' }}>
+          <Stat label={`Day +${k} close`} value={fmtPx(p.price)} accent="ink" />
+          <Stat label="Δ from today" value={fmtPct(delta, 2)} accent={dir} />
+          <Stat label="Date" value={p.date} />
+        </div>
+      </div>
+      <ModelInfoCard model={model} mae={(1.42 + k*0.21).toFixed(2)} rmse={(2.31+k*0.3).toFixed(2)} mape={(1.18+k*0.16).toFixed(2)} horizon={k} />
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<PortfolioApp />);
+function KDaysPanel({ forecast, last, k, model, loading }) {
+  if (!forecast || !last) return null;
+  const pts = forecast.points;
+  const maxAbs = Math.max(...pts.map(p => Math.abs(p.price - last.close)));
+  return (
+    <div className="grid-3">
+      <div className="card" style={{gridColumn:'span 2'}}>
+        <div className="card-head">
+          <div>
+            <div className="eyebrow">k consecutive days</div>
+            <div className="card-title" style={{marginTop:4}}>Forecast — next {k} trading days</div>
+            <div className="card-sub">Sequence prediction · seq2seq decoder · errors compound with horizon</div>
+          </div>
+          {loading && <span className="tag">PREDICTING…</span>}
+        </div>
+        <div className="forecast-list">
+          {pts.map((p, i) => {
+            const delta = ((p.price - last.close) / last.close) * 100;
+            const dir = delta >= 0 ? 'up' : 'down';
+            const w = (Math.abs(p.price - last.close) / Math.max(0.01, maxAbs)) * 100;
+            const left = delta >= 0 ? 50 : (50 - w/2);
+            return (
+              <div className="forecast-row" key={i}>
+                <span className="day">D+{p.day}</span>
+                <span className="date">{p.date}</span>
+                <span className="bar">
+                  <i style={{ left: `${50 - (delta < 0 ? w : 0)}%`, width: `${w}%`, background: dir==='up'?'var(--up)':'var(--down)' }}></i>
+                  <i style={{ left:'50%', width:'1px', background:'var(--ink-4)', borderRadius:0 }}></i>
+                </span>
+                <span className="px">{fmtPx(p.price)}</span>
+                <span className={'delta ' + dir}>{fmtPct(delta, 2)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <ModelInfoCard model={model} mae={(1.42 + k*0.18).toFixed(2)} rmse={(2.31+k*0.27).toFixed(2)} mape={(1.18+k*0.13).toFixed(2)} horizon={k} />
+    </div>
+  );
+}
+
+function Stat({ label, value, accent }) {
+  const cls = accent === 'up' || accent === 'down' ? ' ' + accent : '';
+  return (
+    <div style={{ padding:'14px 18px', borderRight:'1px solid var(--line)' }}>
+      <div className="lbl" style={{
+        fontFamily:'var(--font-mono)', fontSize:10.5, letterSpacing:'0.06em',
+        color:'var(--ink-3)', textTransform:'uppercase', marginBottom:4
+      }}>{label}</div>
+      <div className={'val' + cls} style={{
+        fontFamily:'var(--font-mono)', fontSize:17, fontWeight:500,
+        color: accent === 'up' ? 'var(--up)' : (accent === 'down' ? 'var(--down)' : 'var(--ink)'),
+        fontVariantNumeric:'tabular-nums'
+      }}>{value}</div>
+    </div>
+  );
+}
+
+function KV({ k, v }) {
+  return (
+    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', borderBottom:'1px solid var(--line)', paddingBottom:8 }}>
+      <span style={{ color:'var(--ink-3)', fontSize:12 }}>{k}</span>
+      <span style={{ fontFamily:'var(--font-mono)', fontVariantNumeric:'tabular-nums', fontSize:13 }}>{v}</span>
+    </div>
+  );
+}
+
+// Mount
+ReactDOM.createRoot(document.getElementById('root')).render(<PredictApp />);

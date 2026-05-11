@@ -119,6 +119,7 @@ function PredictApp() {
                 <span className="legend-item"><span className="legend-swatch up"></span>Up day</span>
                 <span className="legend-item"><span className="legend-swatch down"></span>Down day</span>
                 <span className="legend-item"><span className="legend-swatch dashed"></span>{model} forecast</span>
+                <span className="legend-item"><span className="legend-swatch" style={{background:'var(--accent-soft)', height:8}}></span>Confidence ±1σ</span>
               </div>
               <div className="range-tabs">
                 {['1M','3M','6M','1Y','ALL'].map(r => (
@@ -276,6 +277,28 @@ function Stat({ label, value, accent }) {
   );
 }
 
+function ModelInfoCard({ model, mae, rmse, mape, horizon }) {
+  return (
+    <div className="card">
+      <div className="card-head">
+        <div>
+          <div className="eyebrow">Model · validation</div>
+          <div className="card-title" style={{marginTop:4}}>{model} · h={horizon}</div>
+        </div>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', gap:10, fontSize:13 }}>
+        <KV k="MAE"  v={`${mae}%`} />
+        <KV k="RMSE" v={`${rmse}%`} />
+        <KV k="MAPE" v={`${mape}%`} />
+        <KV k="Window" v="30 days" />
+        <KV k="CV split" v="Rolling, 5 folds" />
+      </div>
+      <div style={{ marginTop:14, padding:'10px 12px', background:'var(--surface-2)', borderRadius:'var(--r-md)', fontSize:11.5, color:'var(--ink-2)', lineHeight:1.5 }}>
+        Time-series CV with chronological order preserved. No shuffling, no leakage.
+      </div>
+    </div>
+  );
+}
 function KV({ k, v }) {
   return (
     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', borderBottom:'1px solid var(--line)', paddingBottom:8 }}>

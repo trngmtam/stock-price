@@ -174,6 +174,36 @@
     return +(0.04 + r() * 0.28).toFixed(3);   // 4–32%
   }
 
+  // Portfolio recommendation given a profile (prudent | balanced | aggressive)
+  function portfolio(profile = 'balanced') {
+    const universe = TICKERS.map(t => ({
+      ...t,
+      profit: profitPotential(t.sym),
+      risk:   riskScore(t.sym),
+    }));
+    let sorted;
+    if (profile === 'prudent') {
+      sorted = universe.slice().sort((a,b) => a.risk - b.risk).slice(0, 6);
+    } else if (profile === 'aggressive') {
+      sorted = universe.slice().sort((a,b) => b.profit - a.profit).slice(0, 6);
+    } else {
+      sorted = universe.slice().sort((a,b) => (b.profit / Math.max(0.5, b.risk/50)) - (a.profit / Math.max(0.5, a.risk/50))).slice(0, 6);
+    }
+    const raw = sorted.map(s => Math.max(0.01, s.profit / Math.max(0.4, s.risk / 50)));
+    const sum = raw.reduce((a,b) => a+b, 0);
+    const alloc = sorted.map((s, i) => ({
+      sym: s.sym,
+      name: s.name,
+      sector: s.sector,
+      profit: s.profit,
+      risk: s.risk,
+      weight: +(raw[i] / sum).toFixed(3),
+    }));
+    const portfolioRisk = Math.round(alloc.reduce((a, x) => a + x.weight * x.risk, 0));
+    const expReturn = +alloc.reduce((a, x) => a + x.weight * x.profit, 0).toFixed(3);
+    return { profile, holdings: alloc, risk: portfolioRisk, expReturn };
+  }
+
   window.QuantaData = {
     TICKERS,
     genHistory,
@@ -183,5 +213,6 @@
     tradingScore,
     riskScore,
     profitPotential,
+    portfolio,
   };
 })();
