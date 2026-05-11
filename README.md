@@ -167,7 +167,3 @@ Fixes (pick one):
 ```bash
 MODEL_ROOT=/absolute/path/to/models uvicorn app.main:app
 ```
-
-## License
-
-Academic project. See `Final-project-DL4AI.pdf` for assignment context.
