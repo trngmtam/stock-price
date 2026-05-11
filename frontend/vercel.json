@@ -1,16 +1,9 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
-      "destination": "/pages/portfolio.html"
-    },
-    {
-      "source": "/predict",
-      "destination": "/pages/predict.html"
-    },
-    {
-      "source": "/signals",
-      "destination": "/pages/signals.html"
+      "destination": "/pages/predict.html",
+      "permanent": false
     }
   ]
 }

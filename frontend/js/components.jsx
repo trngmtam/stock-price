@@ -56,6 +56,7 @@ function Topbar({ active }) {
   const tabs = [
     { id: 'predict',   label: 'Predict',    href: 'predict.html'   },
     { id: 'signals',   label: 'Signals',    href: 'signals.html'   },
+    { id: 'portfolio', label: 'Portfolio',  href: 'portfolio.html' },
   ];
   return (
     <header className="topbar">
