@@ -1,6 +1,6 @@
-# Stock Price — Vietnamese Equity Prediction
+# Stock Price Prediction
 
-End-to-end project for forecasting Vietnamese stock prices and generating buy/sell signals with deep learning. Includes the research notebooks, trained models, a FastAPI inference service, a static frontend, and an ELT pipeline scaffold.
+End-to-end project for forecasting Nasdaq and Vietnamese stock prices and generating buy/sell signals with deep learning. Includes the research notebooks, trained models, a FastAPI inference service, a static frontend, and an ELT pipeline scaffold.
 
 ## Repository layout
 
