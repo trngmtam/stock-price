@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .features import build_window
 from . import inference
+from . import market_data
 from .schemas import (
     PredictRequest,
     NextDayResponse,
@@ -24,6 +25,9 @@ from .schemas import (
     MultiStepResponse,
     SignalResponse,
     HealthResponse,
+    TickerInfo,
+    HistoryResponse,
+    SnapshotResponse,
 )
 
 WINDOW_SIZE = 30
@@ -146,3 +150,38 @@ def predict_sell_signal(req: PredictRequest):
         probability=proba,
         triggered=proba >= SIGNAL_TRIGGER_THRESHOLD,
     )
+
+
+# ── Real-time market data (vnstock) ─────────────────────────────────────────
+
+@app.get("/data/tickers", response_model=list[TickerInfo])
+def data_tickers():
+    """Curated VN-Index universe with name / sector / exchange."""
+    return market_data.list_tickers()
+
+
+@app.get("/data/history/{sym}", response_model=HistoryResponse)
+def data_history(sym: str, days: int = 240):
+    """Daily OHLCV bars from vnstock, oldest-first. Server-side cached 15 min."""
+    sym = sym.upper()
+    days = max(10, min(1000, days))
+    try:
+        bars = market_data.get_history(sym, days=days)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return HistoryResponse(sym=sym, days=len(bars), bars=bars)
+
+
+@app.get("/data/snapshot/{sym}", response_model=SnapshotResponse)
+def data_snapshot(sym: str):
+    """Latest close + day change %. Server-side cached 60 sec."""
+    sym = sym.upper()
+    try:
+        snap = market_data.get_snapshot(sym)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    return SnapshotResponse(**snap)

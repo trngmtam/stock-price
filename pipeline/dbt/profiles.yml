@@ -1,0 +1,15 @@
+# dbt connection profile. Mounted at /opt/dbt in the airflow container.
+# Override via env vars if you want non-default credentials.
+
+stock_pipeline:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      user: "{{ env_var('POSTGRES_USER', 'stocks') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'stocks') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'stocks') }}"
+      schema: dbt
+      threads: 4

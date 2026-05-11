@@ -60,3 +60,34 @@ class SignalResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     models_loaded: list[str]
+
+
+# ── Market data (vnstock-backed) ────────────────────────────────────────
+
+class TickerInfo(BaseModel):
+    sym: str
+    name: str
+    sector: str
+    exch: str
+
+
+class HistoryBar(BaseModel):
+    date: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+
+
+class HistoryResponse(BaseModel):
+    sym: str
+    days: int
+    bars: list[HistoryBar]
+
+
+class SnapshotResponse(BaseModel):
+    sym: str
+    close: float
+    changePct: float
+    last: Optional[HistoryBar] = None
