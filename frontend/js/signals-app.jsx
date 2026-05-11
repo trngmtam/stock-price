@@ -109,7 +109,7 @@ function SignalsApp() {
 
           {/* Recent signals list */}
           <div className="grid-3">
-            <div className="card flush" style={{gridColumn:'span 2'}}>
+            <div className="card flush" style={{gridColumn:'span 3'}}>
               <div style={{ padding:'18px 20px 8px' }}>
                 <div className="eyebrow">Trading signals</div>
                 <div className="card-title" style={{marginTop:4}}>Recent signals on {ticker}</div>
