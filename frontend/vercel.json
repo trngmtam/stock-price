@@ -1,10 +1,9 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/", "destination": "/frontend/pages/predict.html" },
-    { "source": "/portfolio", "destination": "/frontend/pages/portfolio.html" },
-    { "source": "/predict", "destination": "/frontend/pages/predict.html" },
-    { "source": "/signals", "destination": "/frontend/pages/signals.html" },
-    { "source": "/(.*)", "destination": "/$1" }
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/pages/portfolio.html",
+      "permanent": false
+    }
   ]
 }
