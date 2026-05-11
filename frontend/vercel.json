@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/pages/predict.html",
+      "destination": "/pages/portfolio.html",
       "permanent": false
     }
   ]
