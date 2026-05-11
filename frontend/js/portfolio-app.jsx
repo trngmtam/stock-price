@@ -176,7 +176,7 @@ function PortfolioApp() {
 
               {/* Excluded list */}
               <div className="card" style={{marginTop:18}}>
-                <div className="card-head">s
+                <div className="card-head">
                   <div>
                     <div className="eyebrow">risk management</div>
                     <div className="card-title" style={{marginTop:4}}>Excluded from portfolio</div>
