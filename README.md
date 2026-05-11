@@ -79,6 +79,8 @@ Static pages live in [frontend/pages](frontend/pages):
 
 - [predict.html](frontend/pages/predict.html) — price-prediction UI (Tasks 2.1 / 2.2 / 2.3)
 - [signals.html](frontend/pages/signals.html) — buy/sell signal UI (Task 3)
+- [portfolio.html](frontend/pages/portfolio.html) — portfolio view (Task 4)
+
 
 The frontend **does not accept user-supplied OHLCV**. By design it pulls real-time bars for a chosen ticker via the backend's `vnstock`-backed `/data/history/{sym}` endpoint, then forwards them to the prediction endpoints. Justification is given in the project report.
 
