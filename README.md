@@ -18,11 +18,6 @@ End-to-end project for forecasting **Nasdaq** and **Vietnamese** equity prices a
 │   ├── Task-3.ipynb      Buy / Sell signal classifiers (binary, dual model)
 │   ├── Task-4.ipynb      Profitable ticker selection / portfolio sketch
 │   └── filter-data.ipynb Raw data cleaning, dedup, weekend removal, schema unification
-├── data/
-│   ├── nasdaq/csv_clean/ Cleaned Nasdaq OHLCV CSVs (Task 1)
-│   ├── vietnam/          Cleaned VN OHLCV CSVs (Tasks 2–4)
-│   ├── companies.csv     VN ticker metadata
-│   └── ticker-overview.csv
 ├── models/
 │   ├── task-2/   model_21.keras, model_22.keras, model_23.keras
 │   └── task-3/   vietnam_buy_classifier.keras, vietnam_sell_classifier.keras
