@@ -1,9 +1,3 @@
 {
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/pages/predict.html",
-      "permanent": false
-    }
-  ]
+  "cleanUrls": true
 }
