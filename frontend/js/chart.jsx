@@ -82,25 +82,28 @@ function CandleChart({
   }
 
   // Forecast first index
-  const fcIdx = sliced.length;
-  const lastHistX = fcIdx > 0 ? xScale(fcIdx - 1) : padL;
-
-  // Line path for forecast
   const fcPts = forecast?.points || [];
+  const haveHist = sliced.length > 0;
+  const fcIdx = sliced.length;
+  const lastHistX = haveHist ? xScale(fcIdx - 1) : padL;
+
+  const anchorClose = haveHist ? sliced[sliced.length - 1].close : (fcPts[0]?.price ?? 0);
+  const anchorX = haveHist ? xScale(sliced.length - 1) : xScale(0);
+  const fcStartIdx = haveHist ? sliced.length : 0;
   const linePath = fcPts.length
-    ? 'M ' + xScale(sliced.length - 1) + ' ' + yScale(sliced[sliced.length - 1].close) +
-      fcPts.map((p, i) => ' L ' + xScale(sliced.length + i) + ' ' + yScale(p.price)).join('')
+    ? 'M ' + anchorX + ' ' + yScale(anchorClose) +
+      fcPts.map((p, i) => ' L ' + xScale(fcStartIdx + i) + ' ' + yScale(p.price)).join('')
     : '';
 
   // Confidence band path
   const bandPath = fcPts.length
-    ? 'M ' + xScale(sliced.length - 1) + ' ' + yScale(sliced[sliced.length - 1].close) +
-      fcPts.map((p, i) => ' L ' + xScale(sliced.length + i) + ' ' + yScale(p.upper)).join('') +
+    ? 'M ' + anchorX + ' ' + yScale(anchorClose) +
+      fcPts.map((p, i) => ' L ' + xScale(fcStartIdx + i) + ' ' + yScale(p.upper)).join('') +
       fcPts.slice().reverse().map((p, i) => {
         const idx = fcPts.length - 1 - i;
-        return ' L ' + xScale(sliced.length + idx) + ' ' + yScale(p.lower);
+        return ' L ' + xScale(fcStartIdx + idx) + ' ' + yScale(p.lower);
       }).join('') +
-      ' L ' + xScale(sliced.length - 1) + ' ' + yScale(sliced[sliced.length - 1].close) + ' Z'
+      ' L ' + anchorX + ' ' + yScale(anchorClose) + ' Z'
     : '';
 
   // Hover handler
