@@ -58,10 +58,12 @@ def list_tickers() -> list[dict]:
 
 def _vnstock_history(sym: str, start: str, end: str) -> pd.DataFrame:
     """Call vnstock (lazy import so module load is fast)."""
-    from vnstock import Vnstock
-    stock = Vnstock().stock(symbol=sym, source="VCI")
-    df = stock.quote.history(start=start, end=end, interval="1D")
-    # vnstock v3 returns columns: time, open, high, low, close, volume
+    # Migrated 2025-08-31: legacy Vnstock().stock() was deprecated; new API
+    # is the per-symbol Quote class.
+    from vnstock.api.quote import Quote
+    quote = Quote(symbol=sym, source="VCI")
+    df = quote.history(start=start, end=end, interval="1D")
+    # Returns columns: time, open, high, low, close, volume
     return df
 
 
