@@ -44,16 +44,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — allow the Claude Design frontend (and any local dev client) to call us.
-_allow_origins = os.environ.get(
-    "CORS_ALLOW_ORIGINS",
-    "*",
-).split(",")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _allow_origins],
-    allow_credentials=False,
+    allow_origins=["*"], 
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -73,7 +73,7 @@ function PortfolioApp() {
         <main className="main">
           <div className="hero-row">
             <div className="hero-left">
-              <span className="eyebrow">Task 4 · Vietnam portfolio · Risk-managed</span>
+              <span className="eyebrow"> Vietnam Stock Portfolio · Risk-managed</span>
               <div className="hero-ticker"><span className="sym">Portfolio</span><span className="name">{labelFor(profile)} · {horizon}</span></div>
             </div>
           </div>
@@ -91,7 +91,7 @@ function PortfolioApp() {
                 {/* Allocation card */}
                 <div className="card" style={{gridColumn:'span 2', display:'grid', gridTemplateColumns:'260px 1fr', gap:24, alignItems:'center'}}>
                   <div>
-                    <div className="eyebrow">Task 4.3 · composition</div>
+                    <div className="eyebrow">Composition</div>
                     <div className="card-title" style={{marginTop:4, marginBottom:8}}>Allocation</div>
                     <Donut holdings={data.holdings} />
                   </div>
@@ -111,7 +111,7 @@ function PortfolioApp() {
                 <div className="card">
                   <div className="card-head">
                     <div>
-                      <div className="eyebrow">Task 4.2 · risk</div>
+                      <div className="eyebrow">Risk</div>
                       <div className="card-title" style={{marginTop:4}}>Portfolio risk</div>
                     </div>
                   </div>
@@ -129,13 +129,9 @@ function PortfolioApp() {
               <div className="card flush">
                 <div style={{padding:'18px 20px 8px', display:'flex', justifyContent:'space-between', alignItems:'flex-end'}}>
                   <div>
-                    <div className="eyebrow">Task 4.1 · profitable selection</div>
+                    <div className="eyebrow">Profitable selection</div>
                     <div className="card-title" style={{marginTop:4}}>Recommended holdings</div>
                     <div className="card-sub">Sorted by allocation weight · risk-adjusted profit potential</div>
-                  </div>
-                  <div style={{display:'flex', gap:8}}>
-                    <button className="btn">Export CSV</button>
-                    <button className="btn primary">Place orders</button>
                   </div>
                 </div>
                 <table className="rec-table">
@@ -180,9 +176,9 @@ function PortfolioApp() {
 
               {/* Excluded list */}
               <div className="card" style={{marginTop:18}}>
-                <div className="card-head">
+                <div className="card-head">s
                   <div>
-                    <div className="eyebrow">Task 4.2 · risk management</div>
+                    <div className="eyebrow">risk management</div>
                     <div className="card-title" style={{marginTop:4}}>Excluded from portfolio</div>
                     <div className="card-sub">Risk score above {profile === 'aggressive' ? 90 : profile === 'balanced' ? 75 : 60} or insufficient liquidity / data history.</div>
                   </div>

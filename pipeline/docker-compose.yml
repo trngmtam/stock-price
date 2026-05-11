@@ -39,10 +39,11 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://stocks:stocks@postgres/stocks
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      _PIP_ADDITIONAL_REQUIREMENTS: "apache-airflow-providers-postgres requests vnstock pandas dbt-postgres"
+      _PIP_ADDITIONAL_REQUIREMENTS: "apache-airflow-providers-postgres requests vnstock pandas dbt-postgres==1.7.13"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./dbt:/opt/dbt
+      - ../backend/models:/models
     command: standalone
     ports: ["8080:8080"]
 

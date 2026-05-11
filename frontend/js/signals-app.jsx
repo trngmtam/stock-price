@@ -68,28 +68,6 @@ function SignalsApp() {
 
           <div className="divider" />
 
-          <div className="side-section">
-            <div className="side-label">Features</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6, fontSize:13, color:'var(--ink-2)' }}>
-              <KVlite k="RSI(14)" v="38.2" />
-              <KVlite k="MACD" v="−0.42 ↗" />
-              <KVlite k="SMA(20)" v={last ? fmtPx(last.close * 0.98) : '—'} />
-              <KVlite k="SMA(50)" v={last ? fmtPx(last.close * 0.95) : '—'} />
-              <KVlite k="Volatility (30d)" v="18.4%" />
-              <KVlite k="Volume z-score" v="+1.2" />
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          <div className="side-section">
-            <div className="side-label">Model</div>
-            <div style={{ fontSize:11.5, color:'var(--ink-3)', lineHeight:1.55 }}>
-              Dual-head classifier (LSTM + technicals).<br/>
-              Outputs Buy/Sell/Hold probabilities per day.<br/>
-              F1 (val): <b style={{color:'var(--ink)', fontFamily:'var(--font-mono)'}}>0.71</b>
-            </div>
-          </div>
         </aside>
 
         <main className="main">
@@ -133,9 +111,9 @@ function SignalsApp() {
           <div className="grid-3">
             <div className="card flush" style={{gridColumn:'span 2'}}>
               <div style={{ padding:'18px 20px 8px' }}>
-                <div className="eyebrow">Task 3 · trading signals</div>
+                <div className="eyebrow">Trading signals</div>
                 <div className="card-title" style={{marginTop:4}}>Recent signals on {ticker}</div>
-                <div className="card-sub">Sorted newest first · click to inspect on chart</div>
+                <div className="card-sub">Sorted newest first</div>
               </div>
               <div>
                 {filtered.length === 0 && <div className="placeholder" style={{ margin:'8px 20px 20px' }}>No signals match this filter.</div>}
@@ -156,26 +134,6 @@ function SignalsApp() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="card-head">
-                <div>
-                  <div className="eyebrow">Backtest</div>
-                  <div className="card-title" style={{marginTop:4}}>Strategy stats</div>
-                </div>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:10, fontSize:13 }}>
-                <KV k="Total return" v="+24.6%" />
-                <KV k="Annualized" v="+18.2%" />
-                <KV k="Sharpe" v="1.42" />
-                <KV k="Max drawdown" v="−9.4%" />
-                <KV k="Win rate" v="63%" />
-                <KV k="Avg hold" v="14 days" />
-              </div>
-              <div style={{ marginTop:14, padding:'10px 12px', background:'var(--accent-soft)', borderRadius:'var(--r-md)', fontSize:11.5, color:'var(--accent-ink)', lineHeight:1.5 }}>
-                Walk-forward CV · 2018–2025 · 1,584 trading days held out.
               </div>
             </div>
           </div>

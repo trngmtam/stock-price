@@ -62,17 +62,13 @@ function Topbar({ active }) {
     <header className="topbar">
       <div className="brand">
         <div className="brand-mark"></div>
-        <span>Quanta<span className="brand-suffix">/ VN</span></span>
+        <span>Quanta<span className="brand-suffix">/ VNSTOCK</span></span>
       </div>
       <nav className="nav">
         {tabs.map(t => (
           <a key={t.id} href={t.href} className={t.id === active ? 'active' : ''}>{t.label}</a>
         ))}
       </nav>
-      <div className="topbar-right">
-        <span className="market-pill"><span className="dot"></span>HOSE · OPEN</span>
-        <span className="avatar">PT</span>
-      </div>
     </header>
   );
 }

@@ -104,30 +104,6 @@ function PredictApp() {
           </div>
 
           <div className="divider" />
-
-          <div className="side-section">
-            <div className="side-label">Model</div>
-            <div className="seg" style={{ '--cols': 3 }}>
-              {['LSTM','GRU','TCN'].map(m => (
-                <button key={m} className={model === m ? 'on' : ''} onClick={() => setModel(m)}>{m}</button>
-              ))}
-            </div>
-            <div style={{ fontSize:11.5, color:'var(--ink-3)', marginTop:4, lineHeight:1.5 }}>
-              Multi-feature input · OHLCV<br/>
-              Window 60d · MAE 1.42% (val)
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          <div className="side-section">
-            <div className="side-label">Indicators</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              <Toggle label="Confidence band" defaultOn />
-              <Toggle label="MA(20)" />
-              <Toggle label="Volume" defaultOn />
-            </div>
-          </div>
         </aside>
 
         {/* === Main === */}
@@ -143,7 +119,6 @@ function PredictApp() {
                 <span className="legend-item"><span className="legend-swatch up"></span>Up day</span>
                 <span className="legend-item"><span className="legend-swatch down"></span>Down day</span>
                 <span className="legend-item"><span className="legend-swatch dashed"></span>{model} forecast</span>
-                <span className="legend-item"><span className="legend-swatch" style={{background:'var(--accent-soft)', height:8}}></span>Confidence ±1σ</span>
               </div>
               <div className="range-tabs">
                 {['1M','3M','6M','1Y','ALL'].map(r => (
@@ -199,7 +174,7 @@ function NextDayPanel({ forecast, last, model, loading }) {
       <div className="card" style={{gridColumn:'span 2'}}>
         <div className="card-head">
           <div>
-            <div className="eyebrow">Task 2.2 · Next-day forecast</div>
+            <div className="eyebrow">Next-day forecast</div>
             <div className="card-title" style={{marginTop:4}}>Tomorrow's projected close</div>
             <div className="card-sub">Single-step prediction · {model} · trained on multi-feature OHLCV window of 60 days</div>
           </div>
@@ -209,10 +184,6 @@ function NextDayPanel({ forecast, last, model, loading }) {
           <Stat label="Predicted close" value={fmtPx(p.price)} accent="ink" />
           <Stat label="Δ from today" value={fmtPct(delta, 2)} accent={dir} />
           <Stat label="Confidence band" value={`${fmtPx(p.lower)} — ${fmtPx(p.upper)}`} />
-        </div>
-        <div style={{display:'flex', gap:10, marginTop:16}}>
-          <button className="btn primary">Run inference</button>
-          <button className="btn">Export CSV</button>
         </div>
       </div>
       <ModelInfoCard model={model} mae={1.42} rmse={2.31} mape={1.18} horizon={1} />
@@ -230,7 +201,7 @@ function KthDayPanel({ forecast, last, k, model, loading }) {
       <div className="card" style={{gridColumn:'span 2'}}>
         <div className="card-head">
           <div>
-            <div className="eyebrow">Task 2.2 · k-th day forecast</div>
+            <div className="eyebrow">k-th day forecast</div>
             <div className="card-title" style={{marginTop:4}}>Projected close on day +{k}</div>
             <div className="card-sub">Single-target prediction · model directly outputs day +{k} (not iterated)</div>
           </div>
@@ -240,10 +211,6 @@ function KthDayPanel({ forecast, last, k, model, loading }) {
           <Stat label={`Day +${k} close`} value={fmtPx(p.price)} accent="ink" />
           <Stat label="Δ from today" value={fmtPct(delta, 2)} accent={dir} />
           <Stat label="Date" value={p.date} />
-        </div>
-        <div style={{display:'flex', gap:10, marginTop:16}}>
-          <button className="btn primary">Run inference</button>
-          <button className="btn">Export CSV</button>
         </div>
       </div>
       <ModelInfoCard model={model} mae={(1.42 + k*0.21).toFixed(2)} rmse={(2.31+k*0.3).toFixed(2)} mape={(1.18+k*0.16).toFixed(2)} horizon={k} />
@@ -260,7 +227,7 @@ function KDaysPanel({ forecast, last, k, model, loading }) {
       <div className="card" style={{gridColumn:'span 2'}}>
         <div className="card-head">
           <div>
-            <div className="eyebrow">Task 2.3 · k consecutive days</div>
+            <div className="eyebrow">k consecutive days</div>
             <div className="card-title" style={{marginTop:4}}>Forecast — next {k} trading days</div>
             <div className="card-sub">Sequence prediction · seq2seq decoder · errors compound with horizon</div>
           </div>
@@ -322,9 +289,8 @@ function ModelInfoCard({ model, mae, rmse, mape, horizon }) {
         <KV k="MAE"  v={`${mae}%`} />
         <KV k="RMSE" v={`${rmse}%`} />
         <KV k="MAPE" v={`${mape}%`} />
-        <KV k="Window" v="60 days" />
+        <KV k="Window" v="30 days" />
         <KV k="CV split" v="Rolling, 5 folds" />
-        <KV k="Last trained" v="2 hrs ago" />
       </div>
       <div style={{ marginTop:14, padding:'10px 12px', background:'var(--surface-2)', borderRadius:'var(--r-md)', fontSize:11.5, color:'var(--ink-2)', lineHeight:1.5 }}>
         Time-series CV with chronological order preserved. No shuffling, no leakage.
