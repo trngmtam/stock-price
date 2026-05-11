@@ -1,13 +1,3 @@
----
-title: Stock Prediction API
-emoji: 📈
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Stock Price — Vietnamese Equity Prediction
 
 End-to-end project for forecasting Vietnamese stock prices and generating buy/sell signals with deep learning. Includes the research notebooks, trained models, a FastAPI inference service, a static frontend, and an ELT pipeline scaffold.
